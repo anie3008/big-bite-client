@@ -4,6 +4,7 @@
 import Link from "next/link";
 import { Moon, Sun, Menu, X } from "lucide-react";
 import { useState } from "react";
+import { Logo } from "../ui/shared/logo";
 
 export default function Navbar() {
   const [theme, setTheme] = useState("light");
@@ -21,10 +22,7 @@ export default function Navbar() {
       <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4">
 
         {/* Logo */}
-        <Link href="/" className="text-2xl font-bold">
-          <span className="text-brand">Big</span>
-          <span className="text-foreground">Bite</span>
-        </Link>
+        <Logo />
 
         {/* Desktop Navigation */}
         <div className="hidden items-center gap-8 md:flex">

@@ -1,12 +1,13 @@
-import Navbar from "@/components/ui/shared/Navbar";
-import Image from "next/image";
+import Banner from "@/components/home/Banner"
+
 
 export default function Home() {
   return (
     <>
-    <Navbar />
+   
     <main>
-      
+      <Banner />
+
     </main>
     </>
   );
