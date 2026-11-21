@@ -36,20 +36,23 @@ export default function Hero() {
           </Link>
         </div>
 
-        {/* Pizza Illustration */}
-        <div className="mx-auto grid max-w-7xl grid-cols-1 items-center gap-8 px-6 py-16 md:grid-cols-2">
-          
-              <Image
-    src="/images/banner-image.jpg"
-    alt="Fresh BigBite pizza"
-    width={1200}
-    height={850}
+       
+
+ {/* Pizza Illustration */}
+       
+       <div className="relative mx-auto flex w-full max-w-xl items-center justify-center">
+  {/* Soft decorative glow */}
+  <div className="absolute inset-10 rounded-full bg-brand/20 blur-3xl" />
+
+  <Image
+    src="/images/bigbite-hero-pizza.png"
+    alt="Freshly baked BigBite pizza"
+    width={700}
+    height={800}
     priority
-    sizes="(max-width: 767px) 100vw, 50vw"
-    className="block h-auto w-full max-w-87.5 object-contain sm:max-w-112.5 md:max-w-95 lg:max-w-137.5"
+    className="relative z-10 h-auto w-full object-contain drop-shadow-2xl"
   />
-          
-        </div>
+</div>
 
       </div>
     </section>

@@ -51,12 +51,12 @@ export default function Navbar() {
             )}
           </button>
 
-          <Link href="/login" className="font-medium hover:text-brand">
+          <Link href="/sign-in" className="font-medium hover:text-brand">
             Sign In
           </Link>
 
           <Link
-            href="/register"
+            href="/sign-up"
             className="rounded-lg bg-brand px-5 py-2 text-white hover:bg-brand-dark"
           >
             Sign Up
@@ -89,8 +89,8 @@ export default function Navbar() {
             Toggle theme
           </button>
 
-          <Link href="/login">Sign In</Link>
-          <Link href="/register">Sign Up</Link>
+          <Link href="/sign-in">Sign In</Link>
+          <Link href="/sign-up">Sign Up</Link>
         </div>
       )}
     </nav>
