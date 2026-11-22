@@ -4,66 +4,109 @@
 import { useEffect, useState, type FormEvent } from "react";
 import Link from "next/link";
 import { ArrowLeft, ImagePlus } from "lucide-react";
+import { createMenu } from "@/lib/actions/menu";
+import { toast } from "sonner";
 
 const categories = ["Pizza", "Sides", "Drinks", "Desserts"];
 
 export default function AddMenuItemPage() {
   const [message, setMessage] = useState("");
-   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [uploadedImageUrl, setUploadedImageUrl] = useState("");
 
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    const form = event.currentTarget;
     setMessage("");
+
 
     const formData = new FormData(event.currentTarget);
 
+    const name = formData.get("name") as string;
+    const category = formData.get("category") as string;
+    const description = formData.get("description") as string;
     const price = Number(formData.get("price"));
-    const image = formData.get("image");
+    const city = formData.get("city") as string;
+    const area = formData.get("area") as string;
 
     if (!Number.isFinite(price) || price <= 0) {
-      setMessage("Please enter a valid price greater than zero.");
+      toast.info("Please enter a valid price greater than zero.");
       return;
     }
 
-    if (!(image instanceof File) || image.size === 0) {
-      setMessage("Please select a food image.");
+    const menuItemData = {
+      name,
+      category,
+      description,
+      price,
+      city,
+      area,
+      image: uploadedImageUrl,
+      status: "pending",
+      isActive: false,
+    };
+
+    if (!uploadedImageUrl) {
+      toast.info("Please upload a food image.");
       return;
     }
+    try {
+      const result = await createMenu(menuItemData);
+      console.log(result);
+      form.reset();
+      setPreviewUrl(null);
+      setUploadedImageUrl("");
 
-    if (!image.type.startsWith("image/")) {
-      setMessage("Please select a valid image file.");
-      return;
+      toast.success("Menu item created successfully!");
+    } catch (error) {
+      console.error(error);
+      setMessage("Failed to create menu item.");
     }
-
-    const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-
-    // Frontend validation only. Backend submission comes later.
-    setMessage(
-      "Your form is valid! We'll connect the submission to the backend next."
-    );
-  };
-
-  const handleImageChange = (
-  event: React.ChangeEvent<HTMLInputElement>
-) => {
-  const file = event.target.files?.[0];
-
-  if (!file) {
-    setPreviewUrl(null);
-    return;
   }
+  const handleImageChange = async (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const file = event.target.files?.[0];
 
-  const imageUrl = URL.createObjectURL(file);
-  setPreviewUrl(imageUrl);
-};
+    if (!file) {
+      setPreviewUrl(null);
+      return;
+    }
 
-useEffect(() => {
-  return () => {
-    if (previewUrl) {
-      URL.revokeObjectURL(previewUrl);
+    // Show local image preview
+    const imageUrl = URL.createObjectURL(file);
+    setPreviewUrl(imageUrl);
+
+    // Send image to our Next.js API
+    const formData = new FormData();
+    formData.append("image", file);
+
+    try {
+      const response = await fetch("/api/upload", {
+        method: "POST",
+        body: formData,
+      });
+
+      const result = await response.json();
+      console.log("ImgBB response:", result);
+      if (!response.ok) {
+        throw new Error(result.message);
+      }
+      console.log("ImgBB response:", result);
+      setUploadedImageUrl(result.imageUrl);
+    } catch (error) {
+      console.error("Image upload failed:", error);
     }
   };
-}, [previewUrl]);
+
+  useEffect(() => {
+    return () => {
+      if (previewUrl) {
+        URL.revokeObjectURL(previewUrl);
+      }
+    };
+  }, [previewUrl]);
 
   const inputClass =
     "w-full rounded-lg border border-[#E8D5C5] bg-white px-4 py-3 text-sm text-[#3B292B] outline-none transition placeholder:text-gray-400 focus:border-[#A85D62] focus:ring-2 focus:ring-[#A85D62]/10";
@@ -226,46 +269,46 @@ useEffect(() => {
           <p className="mb-4 mt-1 text-xs text-gray-500">
             Upload a clear image of your food item.
           </p>
-<label
-  htmlFor="image"
-  className="flex cursor-pointer flex-col items-center justify-center rounded-xl border border-dashed border-[#D8B9B5] bg-[#FCF9F6] px-5 py-10 text-center transition hover:bg-[#F8F1E9]"
->
-  {previewUrl ? (
-    <div className="space-y-3">
-      <img
-        src={previewUrl}
-        alt="Selected food preview"
-        className="mx-auto h-48 w-64 rounded-lg object-cover"
-      />
+          <label
+            htmlFor="image"
+            className="flex cursor-pointer flex-col items-center justify-center rounded-xl border border-dashed border-[#D8B9B5] bg-[#FCF9F6] px-5 py-10 text-center transition hover:bg-[#F8F1E9]"
+          >
+            {previewUrl ? (
+              <div className="space-y-3">
+                <img
+                  src={previewUrl}
+                  alt="Selected food preview"
+                  className="mx-auto h-48 w-64 rounded-lg object-cover"
+                />
 
-      <p className="text-sm font-medium text-[#81444A]">
-        Click to change image
-      </p>
-    </div>
-  ) : (
-    <>
-      <ImagePlus size={32} className="mb-3 text-[#A85D62]" />
+                <p className="text-sm font-medium text-[#81444A]">
+                  Click to change image
+                </p>
+              </div>
+            ) : (
+              <>
+                <ImagePlus size={32} className="mb-3 text-[#A85D62]" />
 
-      <span className="text-sm font-medium text-[#81444A]">
-        Choose an image
-      </span>
+                <span className="text-sm font-medium text-[#81444A]">
+                  Choose an image
+                </span>
 
-      <span className="mt-1 text-xs text-gray-500">
-        PNG, JPG or WEBP
-      </span>
-    </>
-  )}
+                <span className="mt-1 text-xs text-gray-500">
+                  PNG, JPG or WEBP
+                </span>
+              </>
+            )}
 
-  <input
-    id="image"
-    name="image"
-    type="file"
-    accept="image/*"
-    onChange={handleImageChange}
-    className="sr-only"
-    required
-  />
-</label>
+            <input
+              id="image"
+              name="image"
+              type="file"
+              accept="image/*"
+              onChange={handleImageChange}
+              className="sr-only"
+              required
+            />
+          </label>
         </section>
 
         {/* Approval notice */}
