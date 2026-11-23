@@ -3,7 +3,7 @@
 
 import { useEffect, useState } from "react";
 import { useSession } from "@/lib/auth-client";
-import { getCustomerOrders } from "@/lib/actions/menu";
+import { cancelOrder, getCustomerOrders } from "@/lib/actions/menu";
 import { ShoppingBag } from "lucide-react";
 
 type Order = {
@@ -186,7 +186,6 @@ useEffect(() => {
               </div>
 
               {/* Status */}
-              {/* Status */}
 <div className="sm:text-right">
   <span
     className={`inline-block rounded-full px-3 py-1 text-xs font-medium capitalize ${getStatusStyle(
@@ -205,7 +204,7 @@ useEffect(() => {
       onClick={() => handleCancelOrder(order._id)}
       className="mt-3 rounded-lg border border-red-300 px-4 py-2 text-sm font-medium text-red-600 transition-colors hover:bg-red-50"
     >
-      Delete
+      Cancel
     </button>
   )}
 </div>

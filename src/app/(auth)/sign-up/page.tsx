@@ -61,29 +61,56 @@ if (image && !image.type.startsWith("image/")) {
     toast.error("Please select a valid image file.");
     return;
   }
-   // Submit to Better Auth
-  try {
-    setIsLoading(true);
-    const { data, error } = await authClient.signUp.email({
-      name: name.trim(),
-      email: email.trim(),
-      password,
-      role,
-      callbackURL: "/",
+  
+// Upload profile image to ImgBB first
+try {
+  setIsLoading(true);
+
+  let imageUrl: string | undefined;
+
+  if (image) {
+    const uploadData = new FormData();
+    uploadData.append("image", image);
+
+    const uploadResponse = await fetch("/api/upload", {
+      method: "POST",
+      body: uploadData,
     });
 
-    if (error) {
-      toast.error(error.message || "Something went wrong.");
+    const uploadResult = await uploadResponse.json();
+
+    if (!uploadResponse.ok) {
+      toast.error(uploadResult.message || "Image upload failed.");
       return;
     }
 
-    console.log(data);
-    toast.success("Account created successfully!");
-  } catch {
-    toast.error("Unable to connect. Please try again.");
-  }finally {
+    imageUrl = uploadResult.imageUrl;
+  }
+
+  // Create account with Better Auth
+  const { data, error } = await authClient.signUp.email({
+    name: name.trim(),
+    email: email.trim(),
+    password,
+    role,
+    ...(imageUrl ? { image: imageUrl } : {}),
+    callbackURL: "/",
+  });
+
+  if (error) {
+    toast.error(error.message || "Something went wrong.");
+    return;
+  }
+
+  console.log(data);
+  toast.success("Account created successfully!");
+} catch (error) {
+  console.error(error);
+  toast.error("Unable to connect. Please try again.");
+} finally {
   setIsLoading(false);
 }
+
 };
 const handleGoogleSignUp = async () => {
   try {

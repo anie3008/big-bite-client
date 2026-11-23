@@ -69,14 +69,24 @@ export default function Navbar() {
             </span>
           ) : user ? (
             <>
-              <div className="text-right">
-                <p className="text-sm font-semibold">
-                  {user.name}
-                </p>
-                <p className="text-xs capitalize text-muted-foreground">
-                  {role}
-                </p>
-              </div>
+              <div className="flex items-center gap-3">
+  {user.image ? (
+    <img
+      src={user.image}
+      alt={user.name}
+      className="h-10 w-10 rounded-full object-cover"
+    />
+  ) : (
+    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-brand text-sm font-semibold text-white">
+      {user.name?.charAt(0).toUpperCase() || "U"}
+    </div>
+  )}
+
+  <div className="text-right">
+    <p className="text-sm font-semibold">{user.name}</p>
+    <p className="text-xs capitalize text-muted-foreground">{role}</p>
+  </div>
+</div>
 
               {role === "vendor" && (
                 <Link
@@ -141,12 +151,26 @@ export default function Navbar() {
             <p className="text-sm text-muted-foreground">Loading...</p>
           ) : user ? (
             <>
-              <div>
-                <p className="font-semibold">{user.name}</p>
-                <p className="text-xs capitalize text-muted-foreground">
-                  {role}
-                </p>
-              </div>
+              <div className="flex items-center gap-3">
+  {user.image ? (
+    <img
+      src={user.image}
+      alt={user.name}
+      className="h-10 w-10 rounded-full object-cover"
+    />
+  ) : (
+    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-brand text-sm font-semibold text-white">
+      {user.name?.charAt(0).toUpperCase() || "U"}
+    </div>
+  )}
+
+  <div>
+    <p className="font-semibold">{user.name}</p>
+    <p className="text-xs capitalize text-muted-foreground">
+      {role}
+    </p>
+  </div>
+</div>
 
               {role === "vendor" && (
                 <Link
