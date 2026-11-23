@@ -45,10 +45,10 @@ export default function Hero() {
   <div className="absolute inset-10 rounded-full bg-brand/20 blur-3xl" />
 
   <Image
-    src="/images/bigbite-hero-pizza.png"
+    src="/images/bigbite-hero.png"
     alt="Freshly baked BigBite pizza"
-    width={700}
-    height={800}
+    width={1648}
+    height={927}
     priority
     className="relative z-10 h-auto w-full object-contain drop-shadow-2xl"
   />

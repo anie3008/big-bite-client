@@ -1,121 +1,40 @@
 
 "use client";
 
-import { useEffect, useState, type FormEvent } from "react";
 import Link from "next/link";
-import { ArrowLeft, ImagePlus } from "lucide-react";
-import { createMenu } from "@/lib/actions/menu";
+import { ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
-
-const categories = ["Pizza", "Sides", "Drinks", "Desserts"];
+import { MenuItemForm } from "@/components/vendor/menu-item-form";
+import { createMenu } from "@/lib/actions/menu";
+import { useSession } from "@/lib/auth-client";
 
 export default function AddMenuItemPage() {
-  const [message, setMessage] = useState("");
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-  const [uploadedImageUrl, setUploadedImageUrl] = useState("");
-
-
-  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    const form = event.currentTarget;
-    setMessage("");
-
-
-    const formData = new FormData(event.currentTarget);
-
-    const name = formData.get("name") as string;
-    const category = formData.get("category") as string;
-    const description = formData.get("description") as string;
-    const price = Number(formData.get("price"));
-    const city = formData.get("city") as string;
-    const area = formData.get("area") as string;
-
-    if (!Number.isFinite(price) || price <= 0) {
-      toast.info("Please enter a valid price greater than zero.");
-      return;
-    }
-
-    const menuItemData = {
-      name,
-      category,
-      description,
-      price,
-      city,
-      area,
-      image: uploadedImageUrl,
-      status: "pending",
-      isActive: false,
-    };
-
-    if (!uploadedImageUrl) {
-      toast.info("Please upload a food image.");
-      return;
-    }
-    try {
-      const result = await createMenu(menuItemData);
-      console.log(result);
-      form.reset();
-      setPreviewUrl(null);
-      setUploadedImageUrl("");
-
-      toast.success("Menu item created successfully!");
-    } catch (error) {
-      console.error(error);
-      setMessage("Failed to create menu item.");
-    }
+  const { data: session, isPending } = useSession();
+  const handleCreate = async (
+  data: import("@/components/vendor/menu-item-form").MenuFormData
+) => {
+  if (isPending|| !session?.user?.id) {
+    console.error("Vendor session not available");
+    return;
   }
-  const handleImageChange = async (
-    event: React.ChangeEvent<HTMLInputElement>
-  ) => {
-    const file = event.target.files?.[0];
 
-    if (!file) {
-      setPreviewUrl(null);
+  const result = await createMenu({
+    ...data,
+    vendorId: session.user.id,
+    status: "pending",
+    isActive: false,
+  });
+
+    if (result.insertedId || result.acknowledged) {
+      toast.success("Menu item created successfully!");
       return;
     }
 
-    // Show local image preview
-    const imageUrl = URL.createObjectURL(file);
-    setPreviewUrl(imageUrl);
-
-    // Send image to our Next.js API
-    const formData = new FormData();
-    formData.append("image", file);
-
-    try {
-      const response = await fetch("/api/upload", {
-        method: "POST",
-        body: formData,
-      });
-
-      const result = await response.json();
-      console.log("ImgBB response:", result);
-      if (!response.ok) {
-        throw new Error(result.message);
-      }
-      console.log("ImgBB response:", result);
-      setUploadedImageUrl(result.imageUrl);
-    } catch (error) {
-      console.error("Image upload failed:", error);
-    }
+    throw new Error("Menu item creation failed");
   };
-
-  useEffect(() => {
-    return () => {
-      if (previewUrl) {
-        URL.revokeObjectURL(previewUrl);
-      }
-    };
-  }, [previewUrl]);
-
-  const inputClass =
-    "w-full rounded-lg border border-[#E8D5C5] bg-white px-4 py-3 text-sm text-[#3B292B] outline-none transition placeholder:text-gray-400 focus:border-[#A85D62] focus:ring-2 focus:ring-[#A85D62]/10";
-
-  const labelClass = "mb-2 block text-sm font-medium text-[#3B292B]";
 
   return (
     <div className="mx-auto max-w-4xl space-y-6">
-      {/* Page heading */}
       <div>
         <Link
           href="/vendor/menu"
@@ -128,227 +47,13 @@ export default function AddMenuItemPage() {
         <h1 className="text-2xl font-bold text-[#3B292B]">
           Add New Menu Item
         </h1>
+
         <p className="mt-1 text-sm text-gray-500">
           Add a new food item to your restaurant menu.
         </p>
       </div>
 
-      <form
-        onSubmit={handleSubmit}
-        className="space-y-6 rounded-xl border border-[#E8D5C5] bg-white p-6 sm:p-8"
-      >
-        {/* Basic information */}
-        <section className="space-y-5">
-          <div>
-            <h2 className="font-semibold text-[#81444A]">
-              Basic Information
-            </h2>
-            <p className="mt-1 text-xs text-gray-500">
-              Provide the basic details of your food item.
-            </p>
-          </div>
-
-          <div>
-            <label htmlFor="name" className={labelClass}>
-              Item Name <span className="text-red-500">*</span>
-            </label>
-            <input
-              id="name"
-              name="name"
-              type="text"
-              placeholder="e.g. Chicken Cheese Pizza"
-              className={inputClass}
-              required
-            />
-          </div>
-
-          <div>
-            <label htmlFor="category" className={labelClass}>
-              Category <span className="text-red-500">*</span>
-            </label>
-            <select
-              id="category"
-              name="category"
-              defaultValue=""
-              className={inputClass}
-              required
-            >
-              <option value="" disabled>
-                Select a category
-              </option>
-              {categories.map((category) => (
-                <option key={category} value={category}>
-                  {category}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div>
-            <label htmlFor="description" className={labelClass}>
-              Description <span className="text-red-500">*</span>
-            </label>
-            <textarea
-              id="description"
-              name="description"
-              rows={4}
-              placeholder="Describe the ingredients, taste, and serving details..."
-              className={inputClass}
-              required
-            />
-          </div>
-        </section>
-
-        <div className="border-t border-[#F0E5DC]" />
-
-        {/* Price and location */}
-        <section className="space-y-5">
-          <div>
-            <h2 className="font-semibold text-[#81444A]">
-              Price & Location
-            </h2>
-            <p className="mt-1 text-xs text-gray-500">
-              Set your item's price and where it is available.
-            </p>
-          </div>
-
-          <div>
-            <label htmlFor="price" className={labelClass}>
-              Price (৳) <span className="text-red-500">*</span>
-            </label>
-            <input
-              id="price"
-              name="price"
-              type="number"
-              min="0.01"
-              step="0.01"
-              placeholder="e.g. 550"
-              className={inputClass}
-              required
-            />
-          </div>
-
-          <div className="grid gap-5 sm:grid-cols-2">
-            <div>
-              <label htmlFor="city" className={labelClass}>
-                City <span className="text-red-500">*</span>
-              </label>
-              <input
-                id="city"
-                name="city"
-                type="text"
-                placeholder="e.g. Dhaka"
-                className={inputClass}
-                required
-              />
-            </div>
-
-            <div>
-              <label htmlFor="area" className={labelClass}>
-                Area <span className="text-red-500">*</span>
-              </label>
-              <input
-                id="area"
-                name="area"
-                type="text"
-                placeholder="e.g. Mirpur"
-                className={inputClass}
-                required
-              />
-            </div>
-          </div>
-        </section>
-
-        <div className="border-t border-[#F0E5DC]" />
-
-        {/* Image upload */}
-        <section>
-          <h2 className="font-semibold text-[#81444A]">
-            Food Image
-          </h2>
-          <p className="mb-4 mt-1 text-xs text-gray-500">
-            Upload a clear image of your food item.
-          </p>
-          <label
-            htmlFor="image"
-            className="flex cursor-pointer flex-col items-center justify-center rounded-xl border border-dashed border-[#D8B9B5] bg-[#FCF9F6] px-5 py-10 text-center transition hover:bg-[#F8F1E9]"
-          >
-            {previewUrl ? (
-              <div className="space-y-3">
-                <img
-                  src={previewUrl}
-                  alt="Selected food preview"
-                  className="mx-auto h-48 w-64 rounded-lg object-cover"
-                />
-
-                <p className="text-sm font-medium text-[#81444A]">
-                  Click to change image
-                </p>
-              </div>
-            ) : (
-              <>
-                <ImagePlus size={32} className="mb-3 text-[#A85D62]" />
-
-                <span className="text-sm font-medium text-[#81444A]">
-                  Choose an image
-                </span>
-
-                <span className="mt-1 text-xs text-gray-500">
-                  PNG, JPG or WEBP
-                </span>
-              </>
-            )}
-
-            <input
-              id="image"
-              name="image"
-              type="file"
-              accept="image/*"
-              onChange={handleImageChange}
-              className="sr-only"
-              required
-            />
-          </label>
-        </section>
-
-        {/* Approval notice */}
-        <div className="rounded-lg bg-[#F8F1E9] p-4">
-          <p className="text-sm font-semibold text-[#81444A]">
-            Admin Approval Required
-          </p>
-          <p className="mt-1 text-sm text-gray-600">
-            Your menu item will be submitted for review. Customers won't
-            be able to see or order it until an admin approves it.
-          </p>
-        </div>
-
-        {message && (
-          <p
-            role="status"
-            className="rounded-lg bg-[#F8F1E9] p-3 text-sm text-[#81444A]"
-          >
-            {message}
-          </p>
-        )}
-
-        {/* Submit */}
-        <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
-          <button
-            type="reset"
-            onClick={() => setMessage("")}
-            className="rounded-lg border border-[#E8D5C5] px-5 py-3 text-sm font-medium text-gray-600 transition hover:bg-[#FCF9F6]"
-          >
-            Clear Form
-          </button>
-
-          <button
-            type="submit"
-            className="rounded-lg bg-[#A85D62] px-6 py-3 text-sm font-semibold text-white transition hover:bg-[#81444A]"
-          >
-            Submit Menu Item
-          </button>
-        </div>
-      </form>
+      <MenuItemForm onSubmit={handleCreate} />
     </div>
   );
 }

@@ -10,7 +10,8 @@ type MenuItem = {
   price: number;
   city: string;
   area: string;
-  image: string;
+  image?: string;
+  images?: string[];
   status: "pending" | "approved" | "rejected";
   isActive: boolean;
 };
@@ -24,14 +25,24 @@ export function MenuItemCard({ item, onDelete }: Props) {
   return (
     <div className="flex items-center gap-4 rounded-xl border border-[#E8D5C5] bg-white p-3 sm:p-4">
       <div className="relative h-24 w-24 shrink-0 overflow-hidden rounded-lg bg-[#F8F1E9]">
-        <Image
-          src={item.image}
-          alt={item.name}
-          fill
-          unoptimized
-          className="object-cover"
-        />
+  {(() => {
+    const imageSrc = item.images?.[0] || item.image;
+
+    return imageSrc ? (
+      <Image
+        src={imageSrc}
+        alt={item.name}
+        fill
+        unoptimized
+        className="object-cover"
+      />
+    ) : (
+      <div className="flex h-full w-full items-center justify-center text-xs text-gray-400">
+        No image
       </div>
+    );
+  })()}
+</div>
 
       <div className="min-w-0 flex-1 space-y-1">
         <h3 className="truncate font-semibold text-[#3B292B]">
