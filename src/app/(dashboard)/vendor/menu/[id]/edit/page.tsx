@@ -43,6 +43,7 @@ export default function EditMenuItemPage() {
           city: data.city,
           area: data.area,
           image: data.image,
+          images: data.images,
         });
       } catch (error) {
         console.error(error);

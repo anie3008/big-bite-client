@@ -5,6 +5,7 @@ import { useState, type FormEvent, type ChangeEvent } from "react";
 import { ImagePlus, X } from "lucide-react";
 import { toast } from "sonner";
 import Image from "next/image";
+import { useSession } from "@/lib/auth-client";
 
 export type MenuFormData = {
   name: string;
@@ -14,7 +15,8 @@ export type MenuFormData = {
   city: string;
   area: string;
   images: string[];
-  image?: string; // Supports older menu items
+  image?: string;
+  vendorId?: string;
 };
 
 type Props = {
@@ -53,6 +55,7 @@ export function MenuItemForm({
   );
 
   const [uploading, setUploading] = useState(false);
+  const { data: session } = useSession();
 
   const inputClass =
     "w-full rounded-lg border border-[#E8D5C5] bg-white px-4 py-3 text-sm text-[#3B292B] outline-none transition placeholder:text-gray-400 focus:border-[#A85D62] focus:ring-2 focus:ring-[#A85D62]/10";
@@ -177,6 +180,7 @@ export function MenuItemForm({
       city: formData.get("city") as string,
       area: formData.get("area") as string,
       images: uploadedImages,
+       vendorId: session?.user?.id,
     };
 
     try {

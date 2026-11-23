@@ -17,20 +17,17 @@ export const createMenu = async (data: Record<string, unknown>) => {
     return res.json()
 };
 
-export const getMenu = async () => {
-  const res = await fetch(`${BASE_URL}/menu`);
-
-  const text = await res.text();
-
-  console.log("Menu API URL:", `${BASE_URL}/menu`);
-  console.log("Response status:", res.status);
-  console.log("Response:", text);
+export const getMenu = async (vendorId: string) => {
+  const res = await fetch(
+    `${BASE_URL}/menu?vendorId=${encodeURIComponent(vendorId)}`,
+    { cache: "no-store" }
+  );
 
   if (!res.ok) {
     throw new Error(`Failed to fetch menu: ${res.status}`);
   }
 
-  return JSON.parse(text);
+  return res.json();
 };
 
 export const getAvailableMenu = async () => {
@@ -143,6 +140,28 @@ export const getVendorOrders = async (vendorId: string) => {
 
   if (!res.ok) {
     throw new Error("Failed to fetch vendor orders");
+  }
+
+  return res.json();
+};
+
+
+export const updateOrderStatus = async (
+  orderId: string,
+  vendorId: string,
+  status: "accepted" | "rejected"
+) => {
+  const res = await fetch(`${BASE_URL}/orders/${orderId}/status`, {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ vendorId, status }),
+  });
+
+  if (!res.ok) {
+    const error = await res.json();
+    throw new Error(error.message || "Failed to update order.");
   }
 
   return res.json();

@@ -1,4 +1,7 @@
 
+"use client";
+
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import {
   UtensilsCrossed,
@@ -9,65 +12,113 @@ import {
   Plus,
   ArrowRight,
 } from "lucide-react";
+import { useSession } from "@/lib/auth-client";
+import { getMenu, getVendorOrders } from "@/lib/actions/menu";
+import { toast } from "sonner";
 
-const stats = [
-  {
-    title: "Total Menu Items",
-    value: "24",
-    description: "Items submitted",
-    icon: UtensilsCrossed,
-  },
-  {
-    title: "Active Menu Items",
-    value: "18",
-    description: "Approved and available",
-    icon: CheckCircle2,
-  },
-  {
-    title: "Pending Orders",
-    value: "08",
-    description: "Awaiting your action",
-    icon: Clock,
-  },
-  {
-    title: "Accepted Orders",
-    value: "12",
-    description: "Currently accepted",
-    icon: ShoppingBag,
-  },
-];
+type MenuItem = {
+  _id: string;
+  name: string;
+  status: "pending" | "approved" | "rejected";
+  isActive: boolean;
+};
 
-const recentOrders = [
-  {
-    id: "#BB-1024",
-    customer: "Rahim Ahmed",
-    items: "2 items",
-    amount: "৳ 850",
-    status: "Pending",
-  },
-  {
-    id: "#BB-1023",
-    customer: "Nusrat Jahan",
-    items: "3 items",
-    amount: "৳ 1,200",
-    status: "Accepted",
-  },
-  {
-    id: "#BB-1022",
-    customer: "Tanvir Hasan",
-    items: "1 item",
-    amount: "৳ 450",
-    status: "Accepted",
-  },
-];
-
-const approvalItems = [
-  { name: "Chicken Cheese Pizza", status: "Approved" },
-  { name: "BBQ Chicken Pizza", status: "Pending" },
-  { name: "Spicy Beef Pizza", status: "Rejected" },
-];
+type Order = {
+  _id: string;
+  customerId: string;
+  itemName: string;
+  price: number;
+  quantity: number;
+  requestDate: string;
+  status: string;
+};
 
 export default function VendorPage() {
+  const { data: session, isPending } = useSession();
+
+  const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const vendorId = session?.user?.id;
+
+  useEffect(() => {
+    if (isPending || !vendorId) return;
+
+    const fetchDashboardData = async () => {
+      try {
+        const [menuData, orderData] = await Promise.all([
+          getMenu(vendorId),
+          getVendorOrders(vendorId),
+        ]);
+
+        setMenuItems(menuData);
+        setOrders(orderData);
+      } catch (error) {
+        console.error(error);
+        toast.error("Failed to load dashboard data.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchDashboardData();
+  }, [vendorId, isPending]);
+
+  if (isPending || loading) {
+    return <div className="p-6">Loading dashboard...</div>;
+  }
+
+  if (!vendorId) {
+    return <div className="p-6">Please sign in to view your dashboard.</div>;
+  }
+
+  // Calculate dashboard statistics
+  const totalMenuItems = menuItems.length;
+
+  const activeMenuItems = menuItems.filter(
+    (item) => item.status === "approved" && item.isActive
+  ).length;
+
+  const pendingOrders = orders.filter(
+    (order) => order.status === "pending"
+  ).length;
+
+  const acceptedOrders = orders.filter(
+    (order) => order.status === "accepted"
+  ).length;
+
+  const stats = [
+    {
+      title: "Total Menu Items",
+      value: totalMenuItems,
+      description: "Items submitted",
+      icon: UtensilsCrossed,
+    },
+    {
+      title: "Active Menu Items",
+      value: activeMenuItems,
+      description: "Approved and available",
+      icon: CheckCircle2,
+    },
+    {
+      title: "Pending Orders",
+      value: pendingOrders,
+      description: "Awaiting your action",
+      icon: Clock,
+    },
+    {
+      title: "Accepted Orders",
+      value: acceptedOrders,
+      description: "Currently accepted",
+      icon: ShoppingBag,
+    },
+  ];
+
+  const recentOrders = orders.slice(0, 5);
+
+  const approvalItems = menuItems.slice(0, 5);
+
   return (
     <div className="space-y-8">
       {/* Welcome */}
@@ -94,6 +145,7 @@ export default function VendorPage() {
                 <p className="text-sm font-medium text-gray-500">
                   {stat.title}
                 </p>
+
                 <div className="rounded-lg bg-[#F8F1E9] p-2">
                   <Icon size={20} className="text-[#A85D62]" />
                 </div>
@@ -117,6 +169,7 @@ export default function VendorPage() {
           <div className="rounded-lg bg-white/15 p-3">
             <CreditCard size={24} />
           </div>
+
           <div>
             <p className="text-sm text-white/75">
               Current Subscription
@@ -170,33 +223,50 @@ export default function VendorPage() {
               </thead>
 
               <tbody>
-                {recentOrders.map((order) => (
-                  <tr
-                    key={order.id}
-                    className="border-t border-[#F0E5DC]"
-                  >
-                    <td className="whitespace-nowrap px-5 py-4 font-medium text-[#81444A]">
-                      {order.id}
-                    </td>
-                    <td className="whitespace-nowrap px-5 py-4 text-gray-600">
-                      {order.customer}
-                    </td>
-                    <td className="whitespace-nowrap px-5 py-4 text-gray-700">
-                      {order.amount}
-                    </td>
-                    <td className="whitespace-nowrap px-5 py-4">
-                      <span
-                        className={`rounded-full px-2.5 py-1 text-xs font-medium ${
-                          order.status === "Pending"
-                            ? "bg-amber-50 text-amber-700"
-                            : "bg-green-50 text-green-700"
-                        }`}
-                      >
-                        {order.status}
-                      </span>
+                {recentOrders.length > 0 ? (
+                  recentOrders.map((order) => (
+                    <tr
+                      key={order._id}
+                      className="border-t border-[#F0E5DC]"
+                    >
+                      <td className="whitespace-nowrap px-5 py-4 font-medium text-[#81444A]">
+                        #{order._id.slice(-6).toUpperCase()}
+                      </td>
+
+                      <td className="whitespace-nowrap px-5 py-4 text-gray-600">
+                        Customer {order.customerId.slice(-6)}
+                      </td>
+
+                      <td className="whitespace-nowrap px-5 py-4 text-gray-700">
+                        ৳ {(order.price * order.quantity).toLocaleString("en-BD")}
+                      </td>
+
+                      <td className="whitespace-nowrap px-5 py-4">
+                        <span
+                          className={`rounded-full px-2.5 py-1 text-xs font-medium ${
+                            order.status === "pending"
+                              ? "bg-amber-50 text-amber-700"
+                              : order.status === "accepted"
+                                ? "bg-green-50 text-green-700"
+                                : "bg-gray-100 text-gray-600"
+                          }`}
+                        >
+                          {order.status.charAt(0).toUpperCase() +
+                            order.status.slice(1)}
+                        </span>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td
+                      colSpan={4}
+                      className="px-5 py-8 text-center text-gray-500"
+                    >
+                      No orders yet.
                     </td>
                   </tr>
-                ))}
+                )}
               </tbody>
             </table>
           </div>
@@ -214,26 +284,33 @@ export default function VendorPage() {
           </div>
 
           <div className="divide-y divide-[#F0E5DC]">
-            {approvalItems.map((item) => (
-              <div
-                key={item.name}
-                className="flex items-center justify-between gap-3 p-4"
-              >
-                <p className="text-sm text-gray-700">{item.name}</p>
-
-                <span
-                  className={`shrink-0 rounded-full px-2 py-1 text-xs font-medium ${
-                    item.status === "Approved"
-                      ? "bg-green-50 text-green-700"
-                      : item.status === "Pending"
-                        ? "bg-amber-50 text-amber-700"
-                        : "bg-red-50 text-red-700"
-                  }`}
+            {approvalItems.length > 0 ? (
+              approvalItems.map((item) => (
+                <div
+                  key={item._id}
+                  className="flex items-center justify-between gap-3 p-4"
                 >
-                  {item.status}
-                </span>
-              </div>
-            ))}
+                  <p className="text-sm text-gray-700">{item.name}</p>
+
+                  <span
+                    className={`shrink-0 rounded-full px-2 py-1 text-xs font-medium ${
+                      item.status === "approved"
+                        ? "bg-green-50 text-green-700"
+                        : item.status === "pending"
+                          ? "bg-amber-50 text-amber-700"
+                          : "bg-red-50 text-red-700"
+                    }`}
+                  >
+                    {item.status.charAt(0).toUpperCase() +
+                      item.status.slice(1)}
+                  </span>
+                </div>
+              ))
+            ) : (
+              <p className="p-4 text-sm text-gray-500">
+                You haven't added any menu items yet.
+              </p>
+            )}
           </div>
 
           <div className="p-4">
@@ -241,7 +318,8 @@ export default function VendorPage() {
               href="/vendor/menu"
               className="text-sm font-medium text-[#A85D62] hover:underline"
             >
-              Manage menu items <ArrowRight className="ml-1 inline" size={14} />
+              Manage menu items{" "}
+              <ArrowRight className="ml-1 inline" size={14} />
             </Link>
           </div>
         </section>
@@ -262,6 +340,7 @@ export default function VendorPage() {
               <div className="rounded-lg bg-[#F8F1E9] p-3">
                 <Plus className="text-[#A85D62]" size={20} />
               </div>
+
               <div>
                 <p className="font-medium text-[#3B292B]">
                   Add New Menu Item
@@ -271,6 +350,7 @@ export default function VendorPage() {
                 </p>
               </div>
             </div>
+
             <ArrowRight size={18} className="text-gray-400" />
           </Link>
 
@@ -282,6 +362,7 @@ export default function VendorPage() {
               <div className="rounded-lg bg-[#F8F1E9] p-3">
                 <ShoppingBag className="text-[#A85D62]" size={20} />
               </div>
+
               <div>
                 <p className="font-medium text-[#3B292B]">
                   Manage Orders
@@ -291,6 +372,7 @@ export default function VendorPage() {
                 </p>
               </div>
             </div>
+
             <ArrowRight size={18} className="text-gray-400" />
           </Link>
         </div>
