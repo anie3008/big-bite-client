@@ -91,3 +91,59 @@ export const deleteMenu = async (id: string) => {
   if (!res.ok) throw new Error("Failed to delete menu item");
   return res.json();
 };
+
+export const createOrder = async (data: Record<string, unknown>) => {
+  const res = await fetch(`${BASE_URL}/orders`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(data),
+  });
+
+  if (!res.ok) {
+    throw new Error("Failed to place order");
+  }
+
+  return res.json();
+};
+
+
+export const getCustomerOrders = async (customerId: string) => {
+  const res = await fetch(
+    `${BASE_URL}/orders?customerId=${encodeURIComponent(customerId)}`,
+    {
+      cache: "no-store",
+    }
+  );
+
+  if (!res.ok) {
+    throw new Error("Failed to fetch customer orders");
+  }
+
+  return res.json();
+};
+export const cancelOrder = async (orderId: string) => {
+  const res = await fetch(`${BASE_URL}/orders/${orderId}/cancel`, {
+    method: "PATCH",
+  });
+
+  if (!res.ok) {
+    throw new Error("Failed to cancel order");
+  }
+
+  return res.json();
+};
+
+export const getVendorOrders = async (vendorId: string) => {
+  const res = await fetch(
+    `${BASE_URL}/orders?vendorId=${encodeURIComponent(vendorId)}`,
+    { cache: "no-store" }
+  );
+
+  if (!res.ok) {
+    throw new Error("Failed to fetch vendor orders");
+  }
+
+  return res.json();
+};

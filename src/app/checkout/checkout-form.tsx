@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { Minus, Plus } from "lucide-react";
 import { useSession } from "@/lib/auth-client";
+import { createOrder } from "@/lib/actions/menu";
+import { toast } from "sonner";
 
 type CheckoutFormProps = {
     item: {
@@ -13,7 +15,7 @@ type CheckoutFormProps = {
         image: string;
         price: number;
         category: string;
-         vendorId: string;
+        vendorId: string;
     };
 };
 
@@ -24,6 +26,9 @@ export function CheckoutForm({ item }: CheckoutFormProps) {
     const [quantity, setQuantity] = useState(1);
     const [deliveryDate, setDeliveryDate] = useState("");
     const [deliveryAddress, setDeliveryAddress] = useState("");
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [error, setError] = useState("");
+
     const tomorrow = new Date();
     tomorrow.setDate(tomorrow.getDate() + 1);
 
@@ -45,13 +50,48 @@ export function CheckoutForm({ item }: CheckoutFormProps) {
         return null;
     }
 
+    const handlePlaceOrder = async (e: React.FormEvent<HTMLFormElement>) => {
+        e.preventDefault();
+
+        setIsSubmitting(true);
+        setError("");
+
+        try {
+            const orderData = {
+                customerId: session.user.id,
+                menuItemId: item._id,
+                itemName: item.name,
+                itemImage: item.image,
+                price: item.price,
+                quantity: quantity,
+                vendorId: item.vendorId,
+                deliveryDate: deliveryDate,
+                deliveryAddress: deliveryAddress,
+                requestDate: new Date(),
+                status: "pending",
+            };
+
+            const result = await createOrder(orderData);
+
+            toast.success("Your order has been placed successfully!");
+            router.push("/customer/my-orders");
+        } catch (err) {
+            setError("Failed to place your order. Please try again.");
+            console.error(err);
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
     return (
         <main className="mx-auto min-h-screen w-full max-w-6xl px-4 py-12">
             <h1 className="mb-8 text-3xl font-bold text-[#3B292B]">
                 Complete Your Order
             </h1>
 
-            <form className="w-full rounded-xl border border-[#E8D5C5] p-6">
+            <form
+                onSubmit={handlePlaceOrder}
+                className="w-full rounded-xl border border-[#E8D5C5] p-6">
                 <h2 className="mb-6 text-xl font-semibold">Your Food Item</h2>
 
                 {/* Food Item */}
@@ -166,18 +206,20 @@ export function CheckoutForm({ item }: CheckoutFormProps) {
                         ৳{subtotal}
                     </span>
                 </div>
-
                 <button
-                    type="button"
-                    disabled
-                    className="mt-6 w-full cursor-not-allowed rounded-lg bg-[#A85D62] px-6 py-3 font-semibold text-white opacity-60"
+                    type="submit"
+                    disabled={isSubmitting}
+                    className="mt-6 w-full rounded-lg bg-[#A85D62] px-6 py-3 font-semibold text-white transition hover:bg-[#81444A] disabled:cursor-not-allowed disabled:opacity-60"
                 >
-                    Place Order
+                    {isSubmitting ? "Placing Order..." : "Place Order"}
                 </button>
 
-                <p className="mt-2 text-center text-xs text-gray-500">
-                    Order submission will be connected to the backend next.
-                </p>
+                {error && (
+                    <p className="mt-3 text-center text-sm text-red-600">
+                        {error}
+                    </p>
+                )}
+
             </form>
         </main>
     );

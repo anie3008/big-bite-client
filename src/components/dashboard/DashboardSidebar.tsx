@@ -9,9 +9,11 @@ import {
   UtensilsCrossed,
   ShoppingBag,
   CreditCard,
+  UserRound,
+  Settings,
 } from "lucide-react";
 
-const navItems = [
+const vendorNavItems = [
   {
     label: "Overview",
     href: "/vendor",
@@ -39,13 +41,35 @@ const navItems = [
   },
 ];
 
+const customerNavItems = [
+  {
+    label: "Overview",
+    href: "/customer",
+    icon: LayoutDashboard,
+  },
+  {
+    label: "My Orders",
+    href: "/customer/my-orders",
+    icon: ShoppingBag,
+  },
+  {
+    label: "Profile Settings",
+    href: "/customer/settings",
+    icon: Settings,
+  },
+];
+
 export default function DashboardSidebar() {
   const pathname = usePathname();
+
+  const isCustomer = pathname.startsWith("/customer");
+
+  const navItems = isCustomer ? customerNavItems : vendorNavItems;
 
   const isActive = (href: string) => {
     if (pathname === href) return true;
 
-    if (href === "/vendor") return false;
+    if (href === "/vendor" || href === "/customer") return false;
 
     if (href === "/vendor/menu") {
       return (
@@ -64,8 +88,9 @@ export default function DashboardSidebar() {
         <h1 className="text-2xl font-bold text-[#81444A]">
           BigBite<span className="text-[#A85D62]">.</span>
         </h1>
+
         <p className="mt-1 text-xs text-gray-500">
-          Vendor Dashboard
+          {isCustomer ? "Customer Dashboard" : "Vendor Dashboard"}
         </p>
       </Link>
 
